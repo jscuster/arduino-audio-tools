@@ -402,6 +402,49 @@ class ChannelReducer : public BaseConverter<T> {
 };
 
 /**
+ * @brief We expand a datastream which consists of a single channel into more channels. E.g. 1 to 2
+ * @author Jason Custer, jscuster
+ * 
+ * @tparam T 
+ */
+template<typename T>
+class ChannelExpander : public BaseConverter<T> {
+    public:
+        ChannelExpander() = default;
+
+        ChannelExpander(int channelCountOfTarget){
+            to_channels = channelCountOfTarget;
+        }
+
+        void setTargetChannels(int channelCountOfTarget) {
+            to_channels = channelCountOfTarget;
+        }
+
+        size_t convert(uint8_t*src, size_t size) {
+            return convert(src,src,size);
+        }
+
+        size_t convert(uint8_t*target, uint8_t*src, size_t size) {
+            int frame_count = size/(sizeof(T)*from_channels);
+            size_t result_size=0;
+            T* result = (T*)target;
+            T* source = (T*)src;
+            for(int i=0; i < frame_count; i++){
+                // copy the channel for each to_channel
+                for (int j=0;j<to_channels-1;j++){
+                    *result++ = *source;
+                    result_size += sizeof(T);
+                }
+                *result++;
+            }
+            return result_size;
+        }
+
+    protected:
+        int to_channels;
+};
+
+/**
  * @brief Increases the channel count
  * 
  * @tparam T 
